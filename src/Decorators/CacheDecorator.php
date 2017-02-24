@@ -1,6 +1,6 @@
 <?php
 
-namespace Advanza\Repositories\Decorators;
+namespace Qintuap\Repositories\Decorators;
 
 use Illuminate\Contracts\Cache\Repository as Cache;
 

@@ -1,12 +1,12 @@
 <?php
 
-use Advanza\Repos;
+use Qintuap\Repos;
 
 if (! function_exists('just_key')) {
     
-    function repo($repo_name)
+    function repo($repoable)
     {
-        return Repos::make($repo_name);
+        return Repos::make($repoable);
     }
     
 }

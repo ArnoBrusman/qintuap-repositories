@@ -1,6 +1,6 @@
 <?php
 
-namespace Advanza\Repositories\Decorators;
+namespace Qintuap\Repositories\Decorators;
 
 use Closure;
 use SplObjectStorage;
@@ -9,18 +9,19 @@ use ReflectionFunction;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Support\Str;
 use Illuminate\Support\Pluralizer;
-use Advanza\Repositories\Contracts\Repository as RepositoryContract;
-use Advanza\Repositories\Contracts\Scoped;
-use Advanza\Repositories\EloquentRepository;
+use Qintuap\Repositories\Contracts\Repository as RepositoryContract;
+use Qintuap\Scopes\Contracts\Scoped;
+use Qintuap\Repositories\EloquentRepository;
 use Illuminate\Database\Eloquent\Model;
-use Advanza\Repositories\Scopes\Scope;
+use Qintuap\Scopes\Scope;
+use Qintuap\Scopes\Contracts\IsCacheable;
 
 /**
  * Description of CacheDecorator
  *
  * @author Premiums
  */
-class EloquentCache implements CacheDecorator, RepositoryContract, Scoped
+class EloquentCache implements CacheDecorator, RepositoryContract, Scoped, IsCacheable
 {
     /**
      * @var EloquentRepository
@@ -459,4 +460,32 @@ class EloquentCache implements CacheDecorator, RepositoryContract, Scoped
     {
         $this->repository = clone $this->repository;
     }
+
+    public function makeCacheKey($method, $parameters)
+    {
+        if(isset($this->cache_tags) && key_exists($method, $this->cache_tags)) {
+            $this->tags = array_merge($this->tags, $this->cache_tags[$method]);
+        }
+        if(isset($this->scopes_cache) && ($this->scopes_cache === true || in_array($method, $this->scopes_cache))) {
+            foreach ($this->parameters as &$parameter) {
+                if($parameter instanceof Model) {
+                    $parameter = $parameter->getKey();
+                }
+            }
+            $this->cache_key = md5(json_encode(array(
+                    $this->callable,
+                    $this->parameters
+                )));
+        } else {
+            $this->cache_key = false;
+        }
+    }
+    
+    public function makeCacheTags($method, $parameters)
+    {
+        if(isset($this->cache_tags) && key_exists($method, $classRepo->cache_tags)) {
+            $this->tags = array_merge($this->tags, $classRepo->cache_tags[$method]);
+        }
+    }
+    
 }

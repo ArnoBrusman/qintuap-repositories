@@ -1,10 +1,10 @@
 <?php
 
-namespace Advanza;
+namespace Qintuap\Repositories;
 
 use Exception;
-use Advanza\Models\Model;
-use Advanza\Repositories\Contracts\Repository;
+use Illuminate\Database\Eloquent\Model;
+use Qintuap\Repositories\Contracts\Repository;
 
 /**
  * Repo factory

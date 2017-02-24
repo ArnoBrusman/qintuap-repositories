@@ -1,6 +1,6 @@
 <?php
 
-namespace Advanza\Repositories\Decorators;
+namespace Qintuap\Repositories\Decorators;
 
 
 /**

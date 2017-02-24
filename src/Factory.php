@@ -1,6 +1,9 @@
 <?php
 
-namespace Advanza\Repositories;
+namespace Qintuap\Repositories;
+
+use Illuminate\Database\Eloquent\Model;
+use Qintuap\Repositories\Contracts\Repository;
 
 /**
  * @author Premiums

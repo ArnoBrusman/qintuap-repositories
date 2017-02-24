@@ -1,19 +1,19 @@
 <?php
 
-namespace Advanza\Repositories;
+namespace Qintuap\Repositories;
 
 use Closure;
-use Advanza\Repositories\Contracts\Repository as RepositoryContract;
+use Qintuap\Repositories\Contracts\Repository as RepositoryContract;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Container\Container as App;
 use Illuminate\Database\Eloquent\Model;
-use Advanza\Exceptions\RepositoryException;
-use Advanza\Repositories\Contracts\Scoped;
-use Advanza\Repositories\Scopes\Scope;
+use Qintuap\Repositories\Exceptions\RepositoryException;
+use Qintuap\Scopes\Contracts\Scoped;
+use Qintuap\Scopes\Scope;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Builder;
-use Advanza\Repositories\Traits\HasScopes;
+use Qintuap\Scopes\Traits\HasScopes;
 use App\Exceptions\Handler as Exception;
 
 class EloquentRepository implements RepositoryContract, Scoped
@@ -249,9 +249,10 @@ class EloquentRepository implements RepositoryContract, Scoped
     
     public function __call($method, $parameters)
     {
-        if (method_exists($this, $scope = 'scope'.ucfirst($method))) {
+        $scope = 'scope'.ucfirst($method);
+        if (method_exists($this, $scope)) {
             return $this->pushCallableScope([$this, $scope], $parameters);
-        } elseif (method_exists($this->model, $scope = 'scope'.ucfirst($method))) {
+        } elseif (method_exists($this->model, $scope)) {
             return $this->pushCallableScope([$this->model, $scope], $parameters);
         }
         
@@ -306,4 +307,5 @@ class EloquentRepository implements RepositoryContract, Scoped
     {
         $this->model = clone $this->model;
     }
+
 }

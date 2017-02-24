@@ -1,8 +1,8 @@
 <?php
 
-namespace Advanza\Repositories\Traits;
+namespace Qintuap\Repositories\Traits;
 
-use Advanza\Repos;
+use Qintuap\Repos;
 
 /**
  * WARNING: sets the __get function. Currently doesn't preserve scope of lazy loaded properties.

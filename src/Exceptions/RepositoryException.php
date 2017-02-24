@@ -1,6 +1,6 @@
 <?php
 
-namespace Advanza\Exceptions;
+namespace Qintuap\Repositories\Exceptions;
 
 use Exception;
 

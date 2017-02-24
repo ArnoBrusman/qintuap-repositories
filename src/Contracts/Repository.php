@@ -1,7 +1,6 @@
 <?php
 
-namespace Advanza\Repositories\Contracts;
-use Advanza\Models\Contracts\Entity;
+namespace Qintuap\Repositories\Contracts;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Model;
@@ -40,18 +39,8 @@ interface Repository {
     
     public function exists($id);
  
-    /**
-     * @return Entity
-     */
     public function find($id, $columns = array('*'));
  
-    /**
-     * 
-     * @param string $field
-     * @param mixed $value
-     * @param array $columns
-     * @return Entity
-     */
     public function findBy($field, $value, $columns = array('*'));
     
     public function first($columns);

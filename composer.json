@@ -14,7 +14,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Qintuap\\Repository\\": "src/"
+            "Qintuap\\Repositories\\": "src/"
         },
         "files": [
             "src/helpers/repos.php"

@@ -1,0 +1,24 @@
+{
+    "name": "qintuap/repo",
+    "description": "Repository package.",
+    "keywords": ["repository"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Arno",
+            "email": "arno.premiums@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.6.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Qintuap\\Repository\\": "src/"
+        },
+        "files": [
+            "src/helpers/repos.php"
+        ]
+    },
+    "minimum-stability": "dev"
+}

@@ -12,7 +12,7 @@
     "repositories": [
         {
             "type": "git",
-            "url": "git@github.com/ArnoBrusman/qintuap-scopes.git"
+            "url": "git@github.com:/ArnoBrusman/qintuap-scopes.git"
         }
     ],
     "require": {

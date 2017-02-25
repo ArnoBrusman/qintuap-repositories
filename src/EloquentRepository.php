@@ -11,14 +11,14 @@ use Illuminate\Database\Eloquent\Model;
 use Qintuap\Repositories\Exceptions\RepositoryException;
 use Qintuap\Scopes\Contracts\Scoped;
 use Qintuap\Scopes\Scope;
+use Qintuap\Scopes\Traits\HasScopes;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Builder;
-use Qintuap\Scopes\Traits\HasScopes;
 use App\Exceptions\Handler as Exception;
 
 class EloquentRepository implements RepositoryContract, Scoped
 {
-    use HasScopes;
+    use Qintuap\Scopes\Traits\HasScopes;
     
     /* @var $query Builder */
     /**

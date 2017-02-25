@@ -2,7 +2,7 @@
 
 namespace Qintuap\Repositories\Traits;
 
-use Qintuap\Repos;
+use Qintuap\Repositories\Repos;
 
 /**
  * WARNING: sets the __get function. Currently doesn't preserve scope of lazy loaded properties.

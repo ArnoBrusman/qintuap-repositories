@@ -1,6 +1,6 @@
 <?php
 
-use Qintuap\Repos;
+use Qintuap\Repositories\Repos;
 
 if (! function_exists('just_key')) {
     

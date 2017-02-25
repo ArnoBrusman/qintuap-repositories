@@ -41,7 +41,7 @@ class EloquentCache implements CacheDecorator, RepositoryContract, Scoped, IsCac
     protected $cached = true;
     protected $generic_methods = [];
     var $scopes_cache = ['scopeOfRelation'];
-    var $cache_tag = [];
+    var $cache_tags = [];
     /**
      * time in minutes that the values will be cached. Set to 0 for forever.
      */
@@ -463,29 +463,28 @@ class EloquentCache implements CacheDecorator, RepositoryContract, Scoped, IsCac
 
     public function makeCacheKey($method, $parameters)
     {
-        if(isset($this->cache_tags) && key_exists($method, $this->cache_tags)) {
-            $this->tags = array_merge($this->tags, $this->cache_tags[$method]);
-        }
         if(isset($this->scopes_cache) && ($this->scopes_cache === true || in_array($method, $this->scopes_cache))) {
-            foreach ($this->parameters as &$parameter) {
+            foreach ($parameters as &$parameter) {
                 if($parameter instanceof Model) {
                     $parameter = $parameter->getKey();
                 }
             }
-            $this->cache_key = md5(json_encode(array(
-                    $this->callable,
-                    $this->parameters
+            $cache_key = md5(json_encode(array(
+                    $method,
+                    $parameters
                 )));
         } else {
-            $this->cache_key = false;
+            $cache_key = false;
         }
+        return $cache_key;
     }
     
     public function makeCacheTags($method, $parameters)
     {
-        if(isset($this->cache_tags) && key_exists($method, $classRepo->cache_tags)) {
-            $this->tags = array_merge($this->tags, $classRepo->cache_tags[$method]);
+        if(isset($this->cache_tags) && key_exists($method, $this->cache_tags)) {
+            $tags = array_merge([$this->tag], $this->cache_tags[$method]);
         }
+        return $tags;
     }
     
 }

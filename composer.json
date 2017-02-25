@@ -1,5 +1,5 @@
 {
-    "name": "qintuap/repo",
+    "name": "qintuap/repository",
     "description": "Repository package.",
     "keywords": ["repository"],
     "license": "MIT",
@@ -7,6 +7,12 @@
         {
             "name": "Arno",
             "email": "arno.premiums@gmail.com"
+        }
+    ],
+    "repositories": [
+        {
+            "type": "git",
+            "url": "git@github.com/ArnoBrusman/qintuap-scopes.git"
         }
     ],
     "require": {

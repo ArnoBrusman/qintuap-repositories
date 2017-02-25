@@ -18,7 +18,7 @@ use App\Exceptions\Handler as Exception;
 
 class EloquentRepository implements RepositoryContract, Scoped
 {
-    use Qintuap\Scopes\Traits\HasScopes;
+    use \Qintuap\Scopes\Traits\HasScopes;
     
     /* @var $query Builder */
     /**

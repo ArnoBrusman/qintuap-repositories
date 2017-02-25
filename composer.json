@@ -1,5 +1,5 @@
 {
-    "name": "qintuap/repository",
+    "name": "qintuap/repositories",
     "description": "Repository package.",
     "keywords": ["repository"],
     "license": "MIT",
@@ -20,7 +20,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Qintuap\\Repository\\": "src/"
+            "Qintuap\\Repositories\\": "src/"
         },
         "files": [
             "src/helpers/repos.php"

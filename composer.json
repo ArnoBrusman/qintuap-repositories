@@ -17,7 +17,8 @@
     ],
     "require": {
         "php": ">=5.6.4",
-        "qintuap/scopes":"dev-dev"
+        "qintuap/scopes":"dev-dev",
+        "qintuap/cachedecorators":"dev-dev"
     },
     "autoload": {
         "psr-4": {

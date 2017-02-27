@@ -246,17 +246,20 @@ class EloquentRepository implements RepositoryContract, Scoped
     /* ----------------------------------------------------- *\
      * Overload Methods
      * ----------------------------------------------------- */
-    
     public function __call($method, $parameters)
     {
-        $scope = 'scope'.ucfirst($method);
-        if (method_exists($this, $scope)) {
+        // check if it's a scope
+        if ($this->methodScopeExists($method)) {
+            $scope = 'scope'.ucfirst($method);
             return $this->pushCallableScope([$this, $scope], $parameters);
-        } elseif (method_exists($this->model, $scope)) {
-            return $this->pushCallableScope([$this->model, $scope], $parameters);
         }
-        
         return call_user_func_array([$this->model, $method], $parameters);
+    }
+    
+    public function methodScopeExists($method) //doesn't start with 'scope' because that might actually be a scope
+    {
+        $scope = 'scope'.ucfirst($method);
+        return method_exists($this, $scope) || method_exists($this->model, $scope);
     }
     
     static function __callStatic($name, $arguments)

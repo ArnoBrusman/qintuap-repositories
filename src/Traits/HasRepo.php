@@ -37,13 +37,13 @@ trait HasRepo {
         return repo($this->$relationName()->getRelated());
     }
     
-    public function makeCacheKey($method, $parameters)
+    public function makeMethodCacheKey($method, $parameters)
     {
-        return $this->repo->makeCacheKey($method, $parameters);
+        return $this->repo->makeMethodCacheKey($method, $parameters);
     }
     
-    public function makeCacheTags($method, $parameters)
+    public function makeMethodCacheTags($method, $parameters)
     {
-        return $this->repo->makeCacheTags($method, $parameters);
+        return $this->repo->makeMethodCacheTags($method, $parameters);
     }
 }

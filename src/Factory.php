@@ -22,7 +22,6 @@ class Factory {
     }
     
     function make($name, $namespace = null) {
-        
         if($name instanceof Model) {
             $name = class_basename($name);
         }

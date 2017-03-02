@@ -10,42 +10,98 @@ use Qintuap\Repositories\Contracts\Repository;
  */
 class Factory {
     
-    protected $repo_namespaces = [
-        'App\\Repositories',
-        'Advanza\\Repositories'
+    protected $namespaces = [
+        'App',
     ];
+    protected $entityPath = 'Models';
+    protected $contractPath = 'Repositories\\Contracts';
+    protected $repositoryPath = 'Repositories';
     
+    static $decoratorFactories = [];
+            
     function addNamespace($namespace) {
-        if(!in_array($namespace, $this->repo_namespaces)) {
-            array_unshift($this->repo_namespaces[] , $namespace);
+        if(!in_array($namespace, $this->namespaces)) {
+            $this->namespaces[] = $namespace;
         }
     }
     
-    function make($name, $namespace = null) {
+    function make($name) {
         if($name instanceof Model) {
             $name = class_basename($name);
         }
         if($name instanceof Repository) {
             $name = $name->getModelName();
         }
-        
-        if(interface_exists($name)) {
-            return resolve($name);
-        }
-        
-        if($namespace === null) {
-            foreach ($this->repo_namespaces as $namespace) {
-                $repoName = $namespace.'\\Contracts\\'. ucfirst($name);
-                if(interface_exists($repoName)) {
-                    return resolve($repoName);
-                }
-            }
-        } else {
-            $repoName = $namespace.'\\Contracts\\'. ucfirst($name);
-            if(interface_exists($repoName)) {
-                return resolve($repoName);
-            }
+//        if(is_string($namespace)) {
+//            $repoName = $namespace.'\\Contracts\\'. ucfirst($name);
+//        } else {
+//            $repoName = $this->getContract($name);
+//        }
+        return $this->makeRepo($name);
+    }
+    
+    function makeRepo($name) {
+        $repo = $this->_makeRepo($name);
+        if($repo) {
+           return $repo; 
         }
         throw new Exception('repo ' . $name . ' doesn\'t exist');
     }
+    protected function _makeRepo($repoName)
+    {
+        $repositoryFullName = $this->getRepository($repoName);
+        $model = $this->makeModel($repoName);
+        $repo = new $repositoryFullName($model);
+        
+        $repo = $this->decorate($repo,$repoName);
+        
+        return $repo;
+    }
+    
+    protected function decorate($repo,$name) {
+        foreach (self::$decoratorFactories as $decorator) {
+            $repo = $decorator->make($repo,$name);
+        }
+        return $repo;
+    }
+
+    protected function makeModel($modelName)
+    {
+        $modelFullName = $this->getEntity($modelName);
+        return new $modelFullName();
+    }
+    
+    protected function getContract($repoName = '')
+    {
+        foreach ($this->namespaces as $namespace) {
+            $interface = $namespace . '\\' . $this->contractPath . '\\' . $repoName;
+            if(interface_exists($interface)) {
+                return $interface;
+            }
+        }
+    }
+    protected function getEntity($repoName = '')
+    {
+        foreach ($this->namespaces as $namespace) {
+            $class = $namespace . '\\' . $this->entityPath . '\\' . $repoName;
+            if(class_exists($class)) {
+                return $class;
+            }
+        }
+    }
+    protected function getRepository($repoName = '')
+    {
+        foreach ($this->namespaces as $namespace) {
+            $class = $namespace . '\\' . $this->repositoryPath . '\\' . $repoName . 'Repository';
+            if(class_exists($class)) {
+                return $class;
+            }
+        }
+    }
+    
+    function addDecoratorFactory($factory)
+    {
+        self::$decoratorFactories[] = $factory;
+    }
+    
 }

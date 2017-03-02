@@ -47,11 +47,11 @@ class EloquentCache implements CacheDecorator, RepositoryContract, Scoped
      */
     protected $cachetime = 0;
 
-    public function __construct(Cache $cache, EloquentRepository $repository, $tags = [])
+    public function __construct(Cache $cache, EloquentRepository $repository)
     {
         $this->repository = $repository;
         $this->cache = $cache;
-        $this->tags = $this->makeClassTag($repository);
+        $this->tags = [$repository->getModelName()];
     }
 
     public function cached($bool = true)
@@ -76,6 +76,10 @@ class EloquentCache implements CacheDecorator, RepositoryContract, Scoped
 //                        && !is_array(is_array($Scope) && is_callable($Scope))
                         && !is_string($Scope)
                         ) {
+                    if(config('app.env') !== 'production') {
+                        \Debugbar::addMessage('note: can\'t cache scope:' , 'warning');
+                        \Debugbar::addMessage($Scope, 'warning');
+                    }
                     return false;
                 }
             }
@@ -115,10 +119,7 @@ class EloquentCache implements CacheDecorator, RepositoryContract, Scoped
     {
         $tags = $this->tags;
         foreach ($this->repository->getScopes() as $Scope) {
-            \Debugbar::addMessage('getting scope tags', 'info');
-            \Debugbar::addMessage($Scope->useCache(), 'info');
             if($Scope instanceof Scope && $Scope->useCache()) {
-                \Debugbar::addMessage('still getting scope tags', 'info');
                 $tags = array_merge($tags, $Scope->getCacheTags());
             }
         }

@@ -2,6 +2,7 @@
 
 namespace Qintuap\Repositories;
 
+use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Qintuap\Repositories\Contracts\Repository;
 
@@ -68,6 +69,9 @@ class Factory {
     protected function makeModel($modelName)
     {
         $modelFullName = $this->getEntity($modelName);
+        if(!$modelFullName) {
+            throw new Exception('Implementation of ' . $modelName . ' not found.');
+        }
         return new $modelFullName();
     }
     

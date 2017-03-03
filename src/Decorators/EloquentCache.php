@@ -14,14 +14,15 @@ use Qintuap\Scopes\Contracts\Scoped;
 use Qintuap\Repositories\EloquentRepository;
 use Illuminate\Database\Eloquent\Model;
 use Qintuap\Scopes\Scope;
+use Qintuap\CacheDecorators\Facades\DecoCache;
 use Qintuap\CacheDecorators\Contracts\CacheDecorator;
-
+use Qintuap\CacheDecorators\Contracts\CacheableScopes;
 /**
  * Description of CacheDecorator
  *
  * @author Premiums
  */
-class EloquentCache implements CacheDecorator, RepositoryContract, Scoped
+class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContract, Scoped
 {
     /**
      * @var EloquentRepository
@@ -39,8 +40,8 @@ class EloquentCache implements CacheDecorator, RepositoryContract, Scoped
     protected $cache;
     protected $cached = true;
     protected $generic_methods = [];
-    var $scopes_cache = ['scopeOfRelation'];
-    var $cache_tags = []; // array of what methods have extra tags.
+    var $scopes_cache = [];
+    var $scope_tags = []; // array of what methods have extra tags.
     var $tags = [];
     /**
      * time in minutes that the values will be cached. Set to 0 for forever.
@@ -51,7 +52,7 @@ class EloquentCache implements CacheDecorator, RepositoryContract, Scoped
     {
         $this->repository = $repository;
         $this->cache = $cache;
-        $this->tags = [$repository->getModelName()];
+        $this->tags = $this->makeClassTags();
     }
 
     public function cached($bool = true)
@@ -66,25 +67,6 @@ class EloquentCache implements CacheDecorator, RepositoryContract, Scoped
         $cacheable = $this->scopesAreCacheable();
         
         return $cacheable;
-    }
-    
-    protected function scopesAreCacheable()
-    {
-        if($this->repository->hasScope()) {
-            foreach ($this->repository->getScopes() as $Scope) {
-                if(!($Scope instanceof Scope && $Scope->useCache())
-//                        && !is_array(is_array($Scope) && is_callable($Scope))
-                        && !is_string($Scope)
-                        ) {
-                    if(config('app.env') !== 'production') {
-                        \Debugbar::addMessage('note: can\'t cache scope:' , 'warning');
-                        \Debugbar::addMessage($Scope, 'warning');
-                    }
-                    return false;
-                }
-            }
-        }
-        return true;
     }
     
     /** generic methods **/
@@ -264,7 +246,7 @@ class EloquentCache implements CacheDecorator, RepositoryContract, Scoped
     }
     
     public function ofRelation($relationName,$relation) {
-        $this->repository->pushCallableScope([$this->repository, 'scope' . ucfirst(__FUNCTION__)], [$relationName,$relation], [self::makeClassTag($relation)]);
+        $this->repository->pushCallableScope([$this->repository, 'scope' . ucfirst(__FUNCTION__)], [$relationName,$relation], [DecoCache::makeModelTag($relation)]);
         return $this;
     }
     
@@ -356,8 +338,65 @@ class EloquentCache implements CacheDecorator, RepositoryContract, Scoped
 
 
     /* ----------------------------------------------------- *\
-     * Scoped methods. 
+     * Scope methods. 
      * ----------------------------------------------------- */
+    
+    
+    protected function scopesAreCacheable()
+    {
+        if($this->repository->hasScope()) {
+            foreach ($this->repository->getScopes() as $Scope) {
+                if(!($Scope instanceof Scope && $Scope->useCache())
+//                        && !is_array(is_array($Scope) && is_callable($Scope))
+                        && !is_string($Scope)
+                        ) {
+                    if(config('app.env') !== 'production') {
+                        $scopeName = $Scope instanceof Scope ? $Scope->getName() : '';
+                        \Debugbar::addMessage('note: can\'t cache scope: ' .$scopeName , 'warning');
+                        \Debugbar::addMessage($Scope, 'warning');
+                    }
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    public function useScopeCache($method,$parameters)
+    {
+        return isset($this->scopes_cache) && (
+                $this->scopes_cache === true 
+                || $method === 'scopeOfRelation'
+                || in_array($method, $this->scopes_cache));
+    }
+
+    public function makeScopeCacheKey($method, $parameters)
+    {
+        foreach ($parameters as &$parameter) {
+            if($parameter instanceof Model) {
+                $parameter = $parameter->getKey();
+            }
+        }
+        $cache_key = md5(json_encode(array(
+                $method,
+                $parameters
+            )));
+        return $cache_key;
+    }
+    
+    public function makeScopeCacheTags($method, $parameters)
+    {
+        $tags = $this->tags;
+        foreach ($parameters as $parameter) {
+            if($parameter instanceof Model) {
+                $tags[] = DecoCache::makeModelTag($parameter);
+            }
+        }
+        if(isset($this->scope_tags) && key_exists($method, $this->scope_tags)) {
+            $tags = array_merge($tags, $this->scope_tags[$method]);
+        }
+        return $tags;
+    }
     
     public function hasScope()
     {
@@ -426,12 +465,12 @@ class EloquentCache implements CacheDecorator, RepositoryContract, Scoped
         return self::$hashes[$closure];
     }
     
-    public static function makeClassTag($class = null)
+    public function makeClassTags($class = null)
     {
         if(is_null($class)) {
             $class = $this->getModel();
         }
-        return strtolower(Pluralizer::plural(class_basename($class)));
+        return [DecoCache::makeModelTag($class)];
     }
 
     protected function getRelationTags($relations)
@@ -469,31 +508,4 @@ class EloquentCache implements CacheDecorator, RepositoryContract, Scoped
         $this->repository = clone $this->repository;
     }
 
-    public function makeMethodCacheKey($method, $parameters)
-    {
-        if(isset($this->scopes_cache) && ($this->scopes_cache === true || in_array($method, $this->scopes_cache))) {
-            foreach ($parameters as &$parameter) {
-                if($parameter instanceof Model) {
-                    $parameter = $parameter->getKey();
-                }
-            }
-            $cache_key = md5(json_encode(array(
-                    $method,
-                    $parameters
-                )));
-        } else {
-            $cache_key = false;
-        }
-        return $cache_key;
-    }
-    
-    public function makeMethodCacheTags($method, $parameters)
-    {
-        $tags = $this->tags;
-        if(isset($this->cache_tags) && key_exists($method, $this->cache_tags)) {
-            $tags = array_merge($tags, $this->cache_tags[$method]);
-        }
-        return $tags;
-    }
-    
 }

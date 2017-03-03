@@ -15,12 +15,12 @@ abstract class ValueCache extends EloquentCache {
 
     function storeValue($valueName, $value, $id = 0)
     {
-        $this->cache->tags($this->tag)->flush();
+        $this->cache->tags($this->getTags())->flush();
         return $this->repository->storeValue($valueName, $value, $id);
     }
     function storeValues($valueName, $value, $id = 0)
     {
-        $this->cache->tags($this->tag)->flush();
+        $this->cache->tags($this->getTags())->flush();
         return $this->repository->storeValues($valueName, $value, $id);
     }
 }

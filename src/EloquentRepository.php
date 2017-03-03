@@ -77,7 +77,7 @@ class EloquentRepository implements RepositoryContract, Scoped
             return $model;
         }
     }
- 
+
     public function update($id, array $data = [])
     {
         $model = $this->makeModel($id);

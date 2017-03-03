@@ -9,24 +9,18 @@ use Qintuap\CacheDecorators\Factory as DecoFac;
  */
 class DecoratorFactory extends DecoFac {
     
-    protected function getConcreteClass($namespace,$object) {
-        if(is_array($namespace)) {
-            foreach ($namespace as $v) {
-                $class = $this->getConcreteClass($v,$object);
-                if($class) {
-                    return $class;
-                }
-            }
-        } else {
+    var $use_simple = false;
+    
+    protected function _getConcreteClass($namespace, $object, $name = null) {
+        if(is_null($name)) {
             $name = class_basename($object);
             $name = preg_replace('/Repository$/', '', $name);
-            $class = $namespace . '\\' . $name . 'Cache';
-            \Debugbar::addMessage($class, 'info');
-            if(class_exists($class)) {
-                return $class;
-            } else {
-                return false;
-            }
+        }
+        $class = $namespace . '\\' . $name . 'Cache';
+        if(class_exists($class)) {
+            return $class;
+        } else {
+            return false;
         }
     }
     

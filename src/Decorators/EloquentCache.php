@@ -393,11 +393,14 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
             }
         }
         if(isset($this->scope_tags) && key_exists($method, $this->scope_tags)) {
-            $tags = array_merge($tags, $this->scope_tags[$method]);
+            $scope_tags = is_array($this->scope_tags[$method]) 
+                    ? $this->scope_tags[$method]
+                    : [$this->scope_tags[$method]];
+            $tags = array_merge($tags, $scope_tags);
         }
         return $tags;
     }
-    
+
     public function hasScope()
     {
         return $this->delegate(__FUNCTION__, func_get_args());

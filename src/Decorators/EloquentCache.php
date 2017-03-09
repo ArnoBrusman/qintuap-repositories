@@ -246,7 +246,16 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
     }
     
     public function ofRelation($relationName,$relation) {
-        $this->repository->pushCallableScope([$this->repository, 'scope' . ucfirst(__FUNCTION__)], [$relationName,$relation], [DecoCache::makeModelTag($relation)]);
+        if(key_exists($relationName, $this->relationTags)) {
+            $tags = $this->relationTags[$relationName];
+        }elseif($relation instanceof Model) {
+            $tags = [DecoCache::makeModelTag($relation)];
+        } elseif($relationClass = $this->repository->getRelationClass($relationName)) {
+            $tags = [$relationClass];
+        } else {
+            throw new Exception('relation class was not found.');
+        }
+        $this->repository->pushCallableScope([$this->repository, 'scope' . ucfirst(__FUNCTION__)], [$relationName,$relation], $tags);
         return $this;
     }
     

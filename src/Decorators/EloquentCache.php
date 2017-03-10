@@ -289,6 +289,7 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
         if (    !in_array($method, $this->dont_cache)
                 && !preg_match('/random/', $method) 
                 && !preg_match('/Criteria$/', $method)
+                && !$this->repository->methodScopeExists($method)
                 && ( 
                         preg_match('/^find/', $method)
                         || preg_match('/^all/', $method)

@@ -123,6 +123,11 @@ class EloquentRepository implements RepositoryContract, Scoped
     
     public function findBy($attribute, $value, $columns = array('*'))
     {
+        return $this->findWhere($attribute, $value, $columns);
+    }
+    
+    public function findWhere($attribute, $value, $columns = array('*'))
+    {
         return $this->newQuery()->where($attribute, '=', $value)->first($columns);
     }
     

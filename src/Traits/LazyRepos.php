@@ -18,9 +18,6 @@ trait LazyRepos {
 
     protected function initLazyRepos(array $lazyRepos, $namespace = null)
     {
-        if($namespace !== null) {
-            Repos::addNamespace($namespace.'\\Repositories');
-        }
         foreach ($lazyRepos as $lazyRepo) {
 
             $lazyProperty = lcfirst($lazyRepo) . $this->lazyPropertyAffix;

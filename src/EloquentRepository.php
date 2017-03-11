@@ -142,6 +142,12 @@ class EloquentRepository implements RepositoryContract, Scoped
         return $this->scopeOfRelation($this->newQuery(), $relationName, $relation)->first();
     }
     
+    // return an array with a distinct selection of the attribute.
+    public function pick($attribute) {
+        $query = $this->newQuery();
+        return $query->select($attribute)->distinct()->get()->pick($attribute);
+    }
+    
     public function random()
     {
         return $this->newQuery()->orderByRaw('RAND()')->first();

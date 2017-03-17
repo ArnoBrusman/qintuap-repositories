@@ -153,16 +153,7 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
      */
     public function find($id, $columns = array('*'))
     {
-        if ( ! $this->useCache()) {
-            return $this->repository->find($id, $columns);
-        }
-
-        $key = $this->buildKey(__METHOD__, $id. implode('-', $columns));
-        $tags = $this->getTags();
-
-        return $this->cache->tags($tags)->rememberForever($key, function () use ($id, $columns) {
-            return $this->repository->find($id, $columns);
-        });
+        return $this->genericMethodCache(__FUNCTION__, func_get_args());
     }
     
     public function findWith($id, $relations)
@@ -246,16 +237,24 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
     }
     
     public function ofRelation($relationName,$relation) {
-        if(key_exists($relationName, $this->relationTags)) {
-            $tags = $this->relationTags[$relationName];
-        }elseif($relation instanceof Model) {
-            $tags = [DecoCache::makeModelTag($relation)];
-        } elseif($relationClass = $this->repository->getRelationClass($relationName)) {
-            $tags = [$relationClass];
-        } else {
-            throw new Exception('relation class was not found.');
-        }
+        $tags = $this->getRelationTags($relationName);
         $this->repository->pushCallableScope([$this->repository, 'scope' . ucfirst(__FUNCTION__)], [$relationName,$relation], $tags);
+        return $this;
+    }
+    
+    public function getRelation(Model $model,$relationName) {
+        $tags = $this->getRelationTags($relationName);
+        $result = $this->genericMethodCache(__FUNCTION__, func_get_args(), $tags);
+        return $result;
+    }
+    
+    public function with($relations)
+    {
+        if(is_string($relations)) {
+            $relations = [$relations];
+        }
+        $tags = $this->getRelationTags($relations);
+        $this->repository->pushCallableScope([$this->repository, 'scope' . ucfirst(__FUNCTION__)], [$relations], $tags);
         return $this;
     }
     
@@ -316,7 +315,8 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
 
             if($this->cachetime === 0) {
                 return $this->cache->tags($tags)->rememberForever($key, function () use($method,$parameters) {
-                    return call_user_func_array([$this->repository, $method], $parameters);
+                    $result = call_user_func_array([$this->repository, $method], $parameters);
+                    return $result;
                 });
             } else {
                 return $this->cache->tags($tags)->remember($key, $this->cachetime, function () use($method,$parameters) {
@@ -436,7 +436,6 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
         return $this->delegate(__FUNCTION__, func_get_args());
     }
 
-    
     /* ----------------------------------------------------- *\
      * Utility methods
      * ----------------------------------------------------- */
@@ -481,9 +480,9 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
     public function makeClassTags($class = null)
     {
         if(is_null($class)) {
-            $class = $this->getModel();
+            $class = $this->repository->getModelClass();
         }
-        return [DecoCache::makeModelTag($class)];
+        return [$class];
     }
 
     protected function getRelationTags($relations)
@@ -491,16 +490,19 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
         if(is_string($relations)) $relations = [$relations];
         $tags = $this->getTags();
         foreach($relations as $relation) {
-            if(!isset($this->relationTags[$relation])) {
-                continue;
-            }
-            $_relations = $this->relationTags[$relation];
-            
-            if(is_string($_relations)) {
-                $_relations = [$_relations];
-            }
-            foreach ($_relations as $_relation) {
-                $tags[] = $_relation;
+            if(key_exists($relation,$this->relationTags)) {
+                $_relations = $this->relationTags[$relation];
+
+                if(is_string($_relations)) {
+                    $_relations = [$_relations];
+                }
+                foreach ($_relations as $_relation) {
+                    $tags[] = $_relation;
+                }
+            }elseif($relationClass = $this->repository->getRelationClass($relation)) {
+                $tags[] = $relationClass;
+            } else {
+                throw new Exception('relation class was not found.');
             }
         }
         return $tags;

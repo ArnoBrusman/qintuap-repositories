@@ -14,6 +14,7 @@ use Qintuap\Scopes\Scope;
 use Qintuap\Scopes\Traits\HasScopes;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use App\Exceptions\Handler as Exception;
 
 class EloquentRepository implements RepositoryContract, Scoped
@@ -26,6 +27,7 @@ class EloquentRepository implements RepositoryContract, Scoped
      */
     protected $model;
     protected $modelName;
+    protected $keyByKey = true;
 
     public function __construct(Model $model)
     {
@@ -33,22 +35,35 @@ class EloquentRepository implements RepositoryContract, Scoped
         $this->model = $model;
     }
     
+    protected function prepCollecion($collection)
+    {
+        if($this->keyByKey) {
+            $collection->keyBy($this->model->getKeyName());
+        }
+        return $collection;
+    }
+    
     public function all($columns = ['*'])
     {
         $query = $this->newQuery();
-        return $query->get($columns);
+        return $this->prepCollecion($query->get($columns));
     }
     
     public function allWhere($attribute, $value, $columns = ['*'])
     {
-        return $this->newQuery()->where($attribute, '=', $value)->get($columns);
+        return $this->prepCollecion($this->newQuery()->where($attribute, '=', $value)->get($columns));
+    }
+    
+    public function getRelation(Model $model,$relationName)
+    {
+        return $model->getRelationValue($relationName);
     }
     
     public function allWith($with)
     {
         $query = $this->make($with);
 
-        return $this->_prepQuery($query)->get();
+        return $this->prepCollecion($this->_prepQuery($query)->get());
     }
     
     public function push(Model $model)
@@ -90,12 +105,12 @@ class EloquentRepository implements RepositoryContract, Scoped
         return $model->delete();
     }
     
-    public function attach($id, $relation, $datas, $data = [])
+    public function attach($id, $relation, $datas, $pivotData = [])
     {
         $model = $this->makeModel($id);
 //        $relationId = is_array($data) ? $data['id'] : $data;
 //        $data = is_array($data) ? $data : null;
-        $model->{$relation}()->attach($datas, $data);
+        $model->{$relation}()->attach($datas, $pivotData);
     }
     
     public function sync($id, $relation, $datas, $detaching = false)
@@ -155,7 +170,17 @@ class EloquentRepository implements RepositoryContract, Scoped
     
     public function count()
     {
-        return $this->newQuery()->get()->count();
+        return $this->newQuery()->count();
+    }
+    
+    public function sum($column)
+    {
+        return $this->newQuery()->sum($column);
+    }
+    
+    public function min($column)
+    {
+        return $this->newQuery()->min($column);
     }
     
     public function exists($id)
@@ -209,6 +234,11 @@ class EloquentRepository implements RepositoryContract, Scoped
         return $this->model->newQuery();
     }
 
+    public function getModelClass()
+    {
+        return get_class($this->model);
+    }
+    
     /* ----------------------------------------------------- *\
      * Default Scopes
      * ----------------------------------------------------- */
@@ -216,6 +246,14 @@ class EloquentRepository implements RepositoryContract, Scoped
     public function scopeWhere($query,$attribute,$operator = null, $value = null)
     {
         return $query->where($attribute,$operator,$value);
+    }
+    
+    public function scopeWith($query,$relations) {
+        return $query->with($relations);
+    }
+    
+    public function queryScope($query,$method,$arguments) {
+        return call_user_func_array([$query,$method], $arguments);
     }
     
     /* ----------------------------------------------------- *\
@@ -263,6 +301,11 @@ class EloquentRepository implements RepositoryContract, Scoped
         if ($this->methodScopeExists($method)) {
             $scope = 'scope'.ucfirst($method);
             return $this->pushCallableScope([$this, $scope], $parameters);
+        } 
+        // Might be too resource intensive to actually use. Cut this when the app starts acting weird.
+        elseif ($this->methodBuilderExists($method)) {
+            $builderParameters = [$method,$parameters];
+            return $this->pushCallableScope([$this, 'queryScope'], $builderParameters);
         }
         return call_user_func_array([$this->model, $method], $parameters);
     }
@@ -271,6 +314,10 @@ class EloquentRepository implements RepositoryContract, Scoped
     {
         $scope = 'scope'.ucfirst($method);
         return method_exists($this, $scope) || method_exists($this->model, $scope);
+    }
+    public function methodBuilderExists($method)
+    {
+        return method_exists(Builder::class, $method) || method_exists(QueryBuilder::class, $method);
     }
     
     static function __callStatic($name, $arguments)

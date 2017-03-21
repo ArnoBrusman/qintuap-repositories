@@ -6,6 +6,7 @@ use Closure;
 use Qintuap\Repositories\Contracts\Repository as RepositoryContract;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
 use Illuminate\Container\Container as App;
 use Illuminate\Database\Eloquent\Model;
 use Qintuap\Repositories\Exceptions\RepositoryException;
@@ -15,6 +16,7 @@ use Qintuap\Scopes\Traits\HasScopes;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use App\Exceptions\Handler as Exception;
 
 class EloquentRepository implements RepositoryContract, Scoped
@@ -59,6 +61,19 @@ class EloquentRepository implements RepositoryContract, Scoped
         return $model->getRelationValue($relationName);
     }
     
+    public function getScopedRelation(Model $model, $relationName, array $scopes) {
+        /* @var $relationQuery Relation */
+        $relationQuery = $model->$relationName();
+        foreach ($scopes as $key => $value) {
+            if(is_string($key)) {
+                call_user_func_array($relationQuery, (array) $value);
+            } else {
+                $relationQuery->$value();
+            }
+        }
+        return $relationQuery->getResults();
+    }
+    
     public function allWith($with)
     {
         $query = $this->make($with);
@@ -68,7 +83,7 @@ class EloquentRepository implements RepositoryContract, Scoped
     
     public function push(Model $model)
     {
-        $saved = $model->save();
+        $saved = $model->push();
         if(!$saved) {
             throw new Exception('model could not be save.');
         }
@@ -117,7 +132,9 @@ class EloquentRepository implements RepositoryContract, Scoped
     {
         $model = $this->makeModel($id);
         $relationQuery = $model->{$relation}();
-        if($relationQuery instanceof BelongsTo) {
+        if($relationQuery instanceof BelongsToMany) {
+            $this->attach($id, $relation, $datas);
+        } elseif($relationQuery instanceof BelongsTo) {
             $relationQuery->associate($datas);
             $model = $this->push($model);
         } elseif($relationQuery instanceof BelongsToMany) {
@@ -237,6 +254,11 @@ class EloquentRepository implements RepositoryContract, Scoped
     public function getModelClass()
     {
         return get_class($this->model);
+    }
+    
+    public function getModelTable()
+    {
+        return $this->model->getTable();
     }
     
     /* ----------------------------------------------------- *\
@@ -369,4 +391,8 @@ class EloquentRepository implements RepositoryContract, Scoped
         $this->model = clone $this->model;
     }
 
+    function __toString()
+    {
+        return class_basename($this);
+    }
 }

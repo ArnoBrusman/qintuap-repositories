@@ -2,9 +2,15 @@
 
 use Qintuap\Repositories\Repos;
 use Qintuap\Repositories\Factory;
+use Qintuap\Repositories\EloquentRepository;
 
 if (! function_exists('repo')) {
     
+    /**
+     * 
+     * @param mixed $repoable
+     * @return EloquentRepository
+     */
     function repo($repoable)
     {
         $factory = app(Factory::class);

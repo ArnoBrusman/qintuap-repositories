@@ -12,14 +12,21 @@ use Qintuap\Repositories\Contracts\Repository;
 class Factory {
     
     protected $namespaces = [
-        'App',
     ];
     protected $entityPath = 'Models';
     protected $contractPath = 'Repositories\\Contracts';
     protected $repositoryPath = 'Repositories';
     
     static $decoratorFactories = [];
-            
+    
+    public function __construct()
+    {
+        $namespaces = config('qintuap.namespaces');
+        foreach ($namespaces as $namespace) {
+            $this->addNamespace($namespace);
+        }
+    }
+    
     function addNamespace($namespace) {
         if(!in_array($namespace, $this->namespaces)) {
             $this->namespaces[] = $namespace;

@@ -116,9 +116,15 @@ class EloquentRepository implements RepositoryContract, Scoped
         return $this->prepCollecion($this->newQuery()->where($attribute, '=', $value)->get($columns));
     }
     
-    public function getRelation(Model $model,$relationName)
+    public function getRelation(Model $model,$relationName, \Closure $callback = null)
     {
-        return $model->getRelationValue($relationName);
+        if(method_exists($model, $relationName)) {
+            $relationQuery = $model->$relationName();
+            if($callback) {
+                $relationQuery = $callback($relationQuery);
+                return $relationQuery->getResults();
+            }
+        }
     }
     
     public function allWith($with)

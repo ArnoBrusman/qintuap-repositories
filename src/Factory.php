@@ -34,6 +34,7 @@ class Factory {
     }
     
     function make($name) {
+        
         if($name instanceof Model) {
             $name = class_basename($name);
         }
@@ -61,7 +62,12 @@ class Factory {
         $model = $this->makeModel($repoName);
         $repo = new $repositoryFullName($model);
         
-        $repo = $this->decorate($repo,$repoName);
+        $decorated = $this->decorate($repo,$repoName);
+        if(!$decorated) {
+            \Debugbar::addMessage('Repo '.$repoName.'could not be decorated', 'error');
+        } else {
+            $repo = $decorated;
+        }
         
         return $repo;
     }
@@ -108,6 +114,7 @@ class Factory {
                 return $class;
             }
         }
+        return EloquentRepository::class;
     }
     
     function addDecoratorFactory($factory)

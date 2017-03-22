@@ -22,11 +22,12 @@ trait HasRepo {
     
     protected function getRepository()
     {
-        if($this->repository instanceof Repository) {
-            return $this->repository;
+        static $repository;
+        if($repository instanceof Repository) {
+            return $repository;
         }
 
-        return $this->repository = repo($this);
+        return $repository = repo($this);
     }
     
     function getRelationKeyName($relationName) {

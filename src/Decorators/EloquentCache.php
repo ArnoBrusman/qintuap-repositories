@@ -13,10 +13,13 @@ use Qintuap\Repositories\Contracts\Repository as RepositoryContract;
 use Qintuap\Scopes\Contracts\Scoped;
 use Qintuap\Repositories\EloquentRepository;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Collection;
 use Qintuap\Scopes\Scope;
 use Qintuap\CacheDecorators\Facades\DecoCache;
+use Qintuap\Repositories\Traits\HasQueryState;
 use Qintuap\CacheDecorators\Contracts\CacheDecorator;
 use Qintuap\CacheDecorators\Contracts\CacheableScopes;
+
 /**
  * Description of CacheDecorator
  *
@@ -24,6 +27,10 @@ use Qintuap\CacheDecorators\Contracts\CacheableScopes;
  */
 class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContract, Scoped
 {
+//    use HasQueryState {
+//        HasQueryState::__call as protected queryCall;
+//    }
+    
     /**
      * @var EloquentRepository
      */
@@ -47,7 +54,7 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
      * time in minutes that the values will be cached. Set to 0 for forever.
      */
     protected $cachetime = 0;
-
+    
     public function __construct(Cache $cache, EloquentRepository $repository)
     {
         $this->repository = $repository;
@@ -97,12 +104,14 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
         return md5($method . $identifier);
     }
 
-    protected function getTags()
+    protected function getTags($withScopes = true)
     {
         $tags = $this->tags;
-        foreach ($this->repository->getScopes() as $Scope) {
-            if($Scope instanceof Scope && $Scope->useCache()) {
-                $tags = array_merge($tags, $Scope->getCacheTags());
+        if($withScopes) {
+            foreach ($this->repository->getScopes() as $Scope) {
+                if($Scope instanceof Scope && $Scope->useCache()) {
+                    $tags = array_merge($tags, $Scope->getCacheTags());
+                }
             }
         }
         return $tags;
@@ -142,7 +151,17 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
      */
     public function push(Model $model)
     {
-        $this->cache->tags($this->tags)->flush();
+        $tags = $this->getTags(false);
+        
+        // also clear tags for any set relation
+        foreach ($model->getRelations() as $relation) {
+            if($relation instanceof Collection) $relation = $relation->first();
+            $tags = array_merge($tags,$this->makeClassTags($relation));
+        }
+        
+        $this->cache->tags($tags)->flush();
+        
+        
         return $this->repository->push($model);
     }
     
@@ -153,16 +172,7 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
      */
     public function find($id, $columns = array('*'))
     {
-        if ( ! $this->useCache()) {
-            return $this->repository->find($id, $columns);
-        }
-
-        $key = $this->buildKey(__METHOD__, $id. implode('-', $columns));
-        $tags = $this->getTags();
-
-        return $this->cache->tags($tags)->rememberForever($key, function () use ($id, $columns) {
-            return $this->repository->find($id, $columns);
-        });
+        return $this->genericMethodCache(__FUNCTION__, func_get_args());
     }
     
     public function findWith($id, $relations)
@@ -246,7 +256,30 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
     }
     
     public function ofRelation($relationName,$relation) {
-        $this->repository->pushCallableScope([$this->repository, 'scope' . ucfirst(__FUNCTION__)], [$relationName,$relation], [DecoCache::makeModelTag($relation)]);
+        $tags = $this->getRelationTags($relationName);
+        $this->repository->pushCallableScope([$this->repository, 'scope' . ucfirst(__FUNCTION__)], [$relationName,$relation], $tags);
+        return $this;
+    }
+    
+    public function getRelation(Model $model,$relationName) {
+        $tags = $this->getRelationTags($relationName);
+        $result = $this->genericMethodCache(__FUNCTION__, func_get_args(), $tags);
+        return $result;
+    }
+    
+    public function queryRelation(Model $model, $relationName, $callback) {
+        $tags = $this->getRelationTags($relationName);
+        $result = $this->genericMethodCache(__FUNCTION__, func_get_args(), $tags);
+        return $result;
+    }
+    
+    public function with($relations)
+    {
+        if(is_string($relations)) {
+            $relations = [$relations];
+        }
+        $tags = $this->getRelationTags($relations);
+        $this->repository->pushCallableScope([$this->repository, 'scope' . ucfirst(__FUNCTION__)], [$relations], $tags);
         return $this;
     }
     
@@ -276,10 +309,13 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
 
     public function __call($method, $parameters)
     {
+        $builder = $this->queryCall($method,$parameters);
+        if($builder) return $builder;
         // cache certain methods
         if (    !in_array($method, $this->dont_cache)
                 && !preg_match('/random/', $method) 
                 && !preg_match('/Criteria$/', $method)
+                && !$this->repository->methodScopeExists($method)
                 && ( 
                         preg_match('/^find/', $method)
                         || preg_match('/^all/', $method)
@@ -306,7 +342,8 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
 
             if($this->cachetime === 0) {
                 return $this->cache->tags($tags)->rememberForever($key, function () use($method,$parameters) {
-                    return call_user_func_array([$this->repository, $method], $parameters);
+                    $result = call_user_func_array([$this->repository, $method], $parameters);
+                    return $result;
                 });
             } else {
                 return $this->cache->tags($tags)->remember($key, $this->cachetime, function () use($method,$parameters) {
@@ -426,7 +463,6 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
         return $this->delegate(__FUNCTION__, func_get_args());
     }
 
-    
     /* ----------------------------------------------------- *\
      * Utility methods
      * ----------------------------------------------------- */
@@ -471,9 +507,9 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
     public function makeClassTags($class = null)
     {
         if(is_null($class)) {
-            $class = $this->getModel();
+            $class = $this->repository->getModelTable();
         }
-        return [DecoCache::makeModelTag($class)];
+        return [$class];
     }
 
     protected function getRelationTags($relations)
@@ -481,16 +517,19 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
         if(is_string($relations)) $relations = [$relations];
         $tags = $this->getTags();
         foreach($relations as $relation) {
-            if(!isset($this->relationTags[$relation])) {
-                continue;
-            }
-            $_relations = $this->relationTags[$relation];
-            
-            if(is_string($_relations)) {
-                $_relations = [$_relations];
-            }
-            foreach ($_relations as $_relation) {
-                $tags[] = $_relation;
+            if(key_exists($relation,$this->relationTags)) {
+                $_relations = $this->relationTags[$relation];
+
+                if(is_string($_relations)) {
+                    $_relations = [$_relations];
+                }
+                foreach ($_relations as $_relation) {
+                    $tags[] = $_relation;
+                }
+            }elseif($relationClass = $this->repository->getRelationClass($relation)) {
+                $tags[] = $relationClass;
+            } else {
+                throw new Exception('relation class was not found.');
             }
         }
         return $tags;

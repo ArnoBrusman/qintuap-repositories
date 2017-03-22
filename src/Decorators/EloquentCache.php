@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
 use Qintuap\Scopes\Scope;
 use Qintuap\CacheDecorators\Facades\DecoCache;
-use Qintuap\Repositories\Decorators\Traits\HasQueryState;
+use Qintuap\Repositories\Traits\HasQueryState;
 use Qintuap\CacheDecorators\Contracts\CacheDecorator;
 use Qintuap\CacheDecorators\Contracts\CacheableScopes;
 
@@ -27,9 +27,9 @@ use Qintuap\CacheDecorators\Contracts\CacheableScopes;
  */
 class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContract, Scoped
 {
-    use HasQueryState {
-        HasQueryState::__call as protected queryCall;
-    }
+//    use HasQueryState {
+//        HasQueryState::__call as protected queryCall;
+//    }
     
     /**
      * @var EloquentRepository

@@ -1,6 +1,6 @@
 <?php
 
-use Advanza\Query;
+use Advanza\Repositories\Query;
 
 use Illuminate\Database\Query\Builder as BaseBuilder;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Qintuap\Repositories\Decorators\Traits;
+namespace Qintuap\Repositories\Traits;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -23,7 +23,7 @@ trait HasQueryState {
     /**
      * @var Builder
      */
-    protected $query;
+    protected $current_query;
     protected $query_cachable = true;
     protected $querying = false;
     protected $querying_relation = false;
@@ -85,15 +85,25 @@ trait HasQueryState {
         $this->query_scope_parameters[$scope] = $parameters;
     }
     
-    function makeQueryKey()
+    function makeQueryKey($query = null)
     {
-        return hash('sha256', $this->query->toSql().serialize($this->query->getBindings()));
+        if(is_null($query)) $query = $this->query;
+        return hash('sha256', $query->toSql().serialize($query->getBindings()));
     }
     
-    function makeQueryTags()
+    function makeQueryTags($query)
     {
-        $tables = [$this->query->table] + $this->query->joins;
+        if(is_null($query)) $query = $this->query;
+        $tables = [$query->table] + $query->joins;
         return $tables;
+    }
+    
+    function getQueryGetResults($query)
+    {
+        if(is_null($query)) $query = $this->query;
+        $key = $this->makeQueryKey($query);
+        $tags = $this->makeQueryTags($query);
+        return $query->get();
     }
     
 }

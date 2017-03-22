@@ -45,6 +45,66 @@ class EloquentRepository implements RepositoryContract, Scoped
         return $collection;
     }
     
+    protected function make($with = [])
+    {
+        $query = $this->model->with($with);
+        return $this->_prepQuery($query);
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Builder
+     * @throws RepositoryException
+     */
+    public function newQuery()
+    {
+        return $this->_prepQuery($this->model->newQuery());
+    }
+
+    /**
+     * returns a new query without scopes or criteria.
+     */
+    public function newQueryWithoutScopes()
+    {
+        return $this->model->newQuery();
+    }
+    
+    public function newRepo()
+    {
+        return new self($this->model);
+    }
+    
+    public function getModelName()
+    {
+        return class_basename($this->model);
+    }
+
+    public function getModelClass()
+    {
+        return get_class($this->model);
+    }
+    
+    public function getModelTable()
+    {
+        return $this->model->getTable();
+    }
+    
+    /**
+     * Apply limit, order & scopes in query.
+     * @param Builder $query
+     * @return type
+     */
+    protected function _prepQuery($query)
+    {
+        if(isset($this->limit_max)) {
+            $query->limit($this->limit_max);
+        }
+        return $this->applyOrder($query)
+                ->applyScopes($query) ?: $query;   
+    }
+    /* ----------------------------------------------------- *\
+     * Query Result functions
+     * ----------------------------------------------------- */
+    
     public function all($columns = ['*'])
     {
         $query = $this->newQuery();
@@ -59,19 +119,6 @@ class EloquentRepository implements RepositoryContract, Scoped
     public function getRelation(Model $model,$relationName)
     {
         return $model->getRelationValue($relationName);
-    }
-    
-    public function getScopedRelation(Model $model, $relationName, array $scopes) {
-        /* @var $relationQuery Relation */
-        $relationQuery = $model->$relationName();
-        foreach ($scopes as $key => $value) {
-            if(is_string($key)) {
-                call_user_func_array($relationQuery, (array) $value);
-            } else {
-                $relationQuery->$value();
-            }
-        }
-        return $relationQuery->getResults();
     }
     
     public function allWith($with)
@@ -93,54 +140,6 @@ class EloquentRepository implements RepositoryContract, Scoped
     public function paginate($perPage = 15, $columns = array('*'))
     {
         return $this->newQuery()->paginate($perPage, $columns);
-    }
-
-    public function create(array $data, $push = true)
-    {
-        $model = $this->model->newInstance();
-        foreach ($data as $key => $value) {
-            $model->$key = $value;
-        }
-        if($push) {
-            return $this->push($model);
-        } else {
-            return $model;
-        }
-    }
-
-    public function update($id, array $data = [])
-    {
-        $model = $this->makeModel($id);
-        return $model->update($data);
-    }
- 
-    public function delete($id)
-    {
-        $model = $this->makeModel($id);
-        return $model->delete();
-    }
-    
-    public function attach($id, $relation, $datas, $pivotData = [])
-    {
-        $model = $this->makeModel($id);
-//        $relationId = is_array($data) ? $data['id'] : $data;
-//        $data = is_array($data) ? $data : null;
-        $model->{$relation}()->attach($datas, $pivotData);
-    }
-    
-    public function sync($id, $relation, $datas, $detaching = false)
-    {
-        $model = $this->makeModel($id);
-        $relationQuery = $model->{$relation}();
-        if($relationQuery instanceof BelongsToMany) {
-            $this->attach($id, $relation, $datas);
-        } elseif($relationQuery instanceof BelongsTo) {
-            $relationQuery->associate($datas);
-            $model = $this->push($model);
-        } elseif($relationQuery instanceof BelongsToMany) {
-            $relationQuery->sync($datas,$detaching);
-        }
-        return $model;
     }
     
     public function first($columns = array('*'))
@@ -205,60 +204,56 @@ class EloquentRepository implements RepositoryContract, Scoped
         return $this->newQuery()->find($id)->exists;
     }
 
-    protected function make($with = [])
-    {
-        return $this->model->with($with);
-    }
+    /* ----------------------------------------------------- *\
+     * Database Edit Functions
+     * ----------------------------------------------------- */
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Builder
-     * @throws RepositoryException
-     */
-    public function newQuery()
+    public function create(array $data, $push = true)
     {
-        return $this->_prepQuery($this->model->newQuery());
-    }
-    
-    public function newRepo()
-    {
-        return new self($this->model);
-    }
-    
-    public function getModelName()
-    {
-        return class_basename($this->model);
-    }
-    
-    /**
-     * Apply limit, order & scopes in query.
-     * @param Builder $query
-     * @return type
-     */
-    protected function _prepQuery($query)
-    {
-        if(isset($this->limit_max)) {
-            $query->limit($this->limit_max);
+        $model = $this->model->newInstance();
+        foreach ($data as $key => $value) {
+            $model->$key = $value;
         }
-        return $this->applyOrder($query)
-                ->applyScopes($query) ?: $query;   
+        if($push) {
+            return $this->push($model);
+        } else {
+            return $model;
+        }
     }
 
-    /**
-     * returns a new query without scopes or criteria.
-     */
-    public function newQueryWithoutScopes()
+    public function update($id, array $data = [])
     {
-        return $this->model->newQuery();
+        $model = $this->makeModel($id);
+        return $model->update($data);
     }
-
-    public function getModelClass()
+ 
+    public function delete($id)
     {
-        return get_class($this->model);
+        $model = $this->makeModel($id);
+        return $model->delete();
     }
     
-    public function getModelTable()
+    public function attach($id, $relation, $datas, $pivotData = [])
     {
-        return $this->model->getTable();
+        $model = $this->makeModel($id);
+//        $relationId = is_array($data) ? $data['id'] : $data;
+//        $data = is_array($data) ? $data : null;
+        $model->{$relation}()->attach($datas, $pivotData);
+    }
+    
+    public function sync($id, $relation, $datas, $detaching = false)
+    {
+        $model = $this->makeModel($id);
+        $relationQuery = $model->{$relation}();
+        if($relationQuery instanceof BelongsToMany) {
+            $this->attach($id, $relation, $datas);
+        } elseif($relationQuery instanceof BelongsTo) {
+            $relationQuery->associate($datas);
+            $model = $this->push($model);
+        } elseif($relationQuery instanceof BelongsToMany) {
+            $relationQuery->sync($datas,$detaching);
+        }
+        return $model;
     }
     
     /* ----------------------------------------------------- *\

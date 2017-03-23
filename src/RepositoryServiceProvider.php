@@ -11,6 +11,11 @@ class RepositoryServiceProvider extends ServiceProvider {
     
     public function boot() 
     {
+        //
+    }
+    
+    public function register()
+    {
         $this->app->singleton(Factory::class, function($app) {
             return new Factory();
         });
@@ -19,5 +24,4 @@ class RepositoryServiceProvider extends ServiceProvider {
             return new DecoratorFactory($decorators);
         });
     }
-    
 }

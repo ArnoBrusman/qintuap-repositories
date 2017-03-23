@@ -261,10 +261,26 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
         return $this;
     }
     
-    public function getRelation(Model $model,$relationName) {
-        $tags = $this->getRelationTags($relationName);
-        $result = $this->genericMethodCache(__FUNCTION__, func_get_args(), $tags);
-        return $result;
+    public function getRelation(Model $model,$relationName, \Closure $callback = null)
+    {
+        if(method_exists($model, $relationName)) {
+//            return $model->getRelationValue($relationName);
+            $relationQuery = $model->$relationName();
+            if($callback) {
+//                $snitch = new Snitch($relationQuery);
+                $relationQuery = $callback($relationQuery);
+//                if($snitch->isResultCacheable()) {
+//                    $tags = $snitch->getTags();
+//                    $key = $snitch->getKey();
+//                    $result = $this->cache->tags($tags)->rememberForever($key,function() {
+//                        return $relationQuery->getResults();
+//                    });
+//                } else {
+                    $result = $relationQuery->getResults();
+//                }
+                return $result;
+            }
+        }
     }
     
     public function queryRelation(Model $model, $relationName, $callback) {

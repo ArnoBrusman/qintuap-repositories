@@ -21,7 +21,7 @@ use Qintuap\CacheDecorators\Contracts\CacheDecorator;
 use Qintuap\CacheDecorators\Contracts\CacheableScopes;
 
 /**
- * Description of CacheDecorator
+ * Makes sure the majority of expensive queries that go through the repository are cached.
  *
  * @author Premiums
  */
@@ -309,8 +309,8 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
 
     public function __call($method, $parameters)
     {
-        $builder = $this->queryCall($method,$parameters);
-        if($builder) return $builder;
+//        $builder = $this->queryCall($method,$parameters);
+//        if($builder) return $builder;
         // cache certain methods
         if (    !in_array($method, $this->dont_cache)
                 && !preg_match('/random/', $method) 

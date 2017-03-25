@@ -9,7 +9,7 @@ use Qintuap\Repositories\Contracts\Repository;
 /**
  * @author Premiums
  */
-class Factory {
+class Factory implements Contracts\Factory {
     
     protected $namespaces = [
     ];
@@ -81,11 +81,11 @@ class Factory {
 
     protected function makeModel($modelName)
     {
-        $modelFullName = $this->getEntity($modelName);
-        if(!$modelFullName) {
+        $model = $this->getEntity($modelName);
+        if(!$model) {
             throw new Exception('Implementation of ' . $modelName . ' not found.');
         }
-        return new $modelFullName();
+        return new $model();
     }
     
     protected function getContract($repoName = '')

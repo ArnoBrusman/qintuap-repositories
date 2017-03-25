@@ -251,9 +251,7 @@ class EloquentRepository implements RepositoryContract, Scoped
     {
         $model = $this->makeModel($id);
         $relationQuery = $model->{$relation}();
-        if($relationQuery instanceof BelongsToMany) {
-            $this->attach($id, $relation, $datas);
-        } elseif($relationQuery instanceof BelongsTo) {
+        if($relationQuery instanceof BelongsTo) {
             $relationQuery->associate($datas);
             $model = $this->push($model);
         } elseif($relationQuery instanceof BelongsToMany) {

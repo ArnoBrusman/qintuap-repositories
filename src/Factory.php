@@ -97,6 +97,7 @@ class Factory implements Contracts\Factory {
             }
         }
     }
+    
     protected function getEntity($repoName = '')
     {
         foreach ($this->namespaces as $namespace) {
@@ -106,6 +107,7 @@ class Factory implements Contracts\Factory {
             }
         }
     }
+    
     protected function getRepository($repoName = '')
     {
         foreach ($this->namespaces as $namespace) {

@@ -17,7 +17,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use App\Exceptions\Handler as Exception;
+use Exception;
 
 class EloquentRepository implements RepositoryContract, Scoped
 {
@@ -122,9 +122,18 @@ class EloquentRepository implements RepositoryContract, Scoped
             $relationQuery = $model->$relationName();
             if($callback) {
                 $relationQuery = $callback($relationQuery);
-                return $relationQuery->getResults();
             }
+            return $relationQuery->getResults();
         }
+        throw new Exception('Relation ' . $relationName . ' doesn\'t exist');
+    }
+    
+    public function hasRelation(Model $model,$relationName, \Closure $callback = null)
+    {
+        if(method_exists($model, $relationName)) {
+            return $model->whereHas($relationName,$callback)->exists();
+        }
+        throw new Exception('Relation ' . $relationName . ' doesn\'t exist');
     }
     
     public function allWith($with)
@@ -175,6 +184,11 @@ class EloquentRepository implements RepositoryContract, Scoped
         return $this->_prepQuery($query)->find($id);
     }
     
+    public function toSql()
+    {
+        return $this->newQuery()->toSql();
+    }
+    
     function findOfRelation($relationName,$relation) {
         return $this->scopeOfRelation($this->newQuery(), $relationName, $relation)->first();
     }
@@ -205,9 +219,9 @@ class EloquentRepository implements RepositoryContract, Scoped
         return $this->newQuery()->min($column);
     }
     
-    public function exists($id)
+    public function exists()
     {
-        return $this->newQuery()->find($id)->exists;
+        return $this->newQuery()->exists();
     }
 
     /* ----------------------------------------------------- *\
@@ -255,6 +269,9 @@ class EloquentRepository implements RepositoryContract, Scoped
             $relationQuery->associate($datas);
             $model = $this->push($model);
         } elseif($relationQuery instanceof BelongsToMany) {
+            if($datas instanceof Model) {
+                $datas = [$datas->getKey()];
+            }
             $relationQuery->sync($datas,$detaching);
         }
         return $model;

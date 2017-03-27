@@ -37,7 +37,7 @@ interface Repository {
  
     public function delete($id);
     
-    public function exists($id);
+    public function exists();
  
     public function find($id, $columns = array('*'));
  

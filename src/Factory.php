@@ -33,6 +33,11 @@ class Factory implements Contracts\Factory {
         }
     }
     
+    /**
+     * 
+     * @param type $name
+     * @return Repository
+     */
     function make($name) {
         
         if($name instanceof Model) {

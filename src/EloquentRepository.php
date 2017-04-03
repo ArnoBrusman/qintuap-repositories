@@ -147,7 +147,7 @@ class EloquentRepository implements RepositoryContract, Scoped
     {
         $saved = $model->push();
         if(!$saved) {
-            throw new Exception('model could not be save.');
+            throw new Exception('model could not be saved.');
         }
         return $model;
     }
@@ -256,9 +256,8 @@ class EloquentRepository implements RepositoryContract, Scoped
     public function attach($id, $relation, $datas, $pivotData = [])
     {
         $model = $this->makeModel($id);
-//        $relationId = is_array($data) ? $data['id'] : $data;
-//        $data = is_array($data) ? $data : null;
         $model->{$relation}()->attach($datas, $pivotData);
+        unset($model->$relation);
     }
     
     public function sync($id, $relation, $datas, $detaching = false)
@@ -274,6 +273,7 @@ class EloquentRepository implements RepositoryContract, Scoped
             }
             $relationQuery->sync($datas,$detaching);
         }
+        unset($model->$relation);
         return $model;
     }
     

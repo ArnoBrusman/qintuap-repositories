@@ -26,3 +26,17 @@ if (! function_exists('fetchRelation')) {
     }
     
 }
+
+if (! function_exists('repo_push')) {
+    
+    /**
+     * 
+     * @param mixed $repoable
+     * @return EloquentRepository
+     */
+    function repo_push($repoable)
+    {
+        $factory = app(Factory::class);
+        return $factory->make($repoable)->push($repoable);
+    }
+}

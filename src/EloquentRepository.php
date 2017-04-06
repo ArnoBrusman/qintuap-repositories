@@ -88,6 +88,11 @@ class EloquentRepository implements RepositoryContract, Scoped
         return $this->model->getTable();
     }
     
+    public function cloneRepo()
+    {
+        return clone $this;
+    }
+    
     /**
      * Apply limit, order & scopes in query.
      * @param Builder $query
@@ -101,6 +106,7 @@ class EloquentRepository implements RepositoryContract, Scoped
         return $this->applyOrder($query)
                 ->applyScopes($query) ?: $query;   
     }
+    
     /* ----------------------------------------------------- *\
      * Query Result functions
      * ----------------------------------------------------- */

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 trait HasRepo {
     
+    var $repository;
     
     public function __get($key)
     {
@@ -22,7 +23,7 @@ trait HasRepo {
     
     protected function getRepository()
     {
-        static $repository;
+        $repository = $this->repository;
         if($repository instanceof Repository) {
             return $repository;
         }
@@ -52,4 +53,10 @@ trait HasRepo {
     {
         return $this->repo->useScopeCache($method, $parameters);
     }
+    
+    function setRepository($repository)
+    {
+        $this->repository = $repository;
+    }
+    
 }

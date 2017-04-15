@@ -35,23 +35,23 @@ class Factory implements Contracts\Factory {
     
     /**
      * 
-     * @param type $name
+     * @param type $repoAble
      * @return Repository
      */
-    function make($name) {
+    function make($repoAble) {
         
-        if($name instanceof Model) {
-            $name = class_basename($name);
+        if($repoAble instanceof Model) {
+            $repoAble = class_basename($repoAble);
         }
-        if($name instanceof Repository) {
-            $name = $name->getModelName();
+        if($repoAble instanceof Repository) {
+            $repoAble = $repoAble->getModelName();
         }
 //        if(is_string($namespace)) {
 //            $repoName = $namespace.'\\Contracts\\'. ucfirst($name);
 //        } else {
 //            $repoName = $this->getContract($name);
 //        }
-        return $this->makeRepo($name);
+        return $this->makeRepo($repoAble);
     }
     
     function makeRepo($name) {

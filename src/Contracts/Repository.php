@@ -29,6 +29,7 @@ interface Repository {
     public function push(Model $model);
     /**
      * @param array $data
+     * @param array $push Push the created model to the database.
      * @return Model
      */
     public function create(array $data, $push = true);

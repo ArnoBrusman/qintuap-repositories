@@ -28,13 +28,18 @@ class EloquentRepository implements RepositoryContract, Scoped
      * @var Model
      */
     protected $model;
+    /**
+     * @var Factory
+     */
+    protected $factory;
     protected $modelName;
     protected $keyByKey = true;
 
-    public function __construct(Model $model)
+    public function __construct(Model $model, Factory $factory)
     {
         $this->modelName = get_class($model);
         $this->model = $model;
+        $this->factory = $factory;
     }
     
     protected function prepCollecion($collection)

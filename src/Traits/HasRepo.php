@@ -4,6 +4,7 @@ namespace Qintuap\Repositories\Traits;
 
 use Qintuap\Repositories\Contracts\Repository;
 use Illuminate\Database\Eloquent\Model;
+use Qintuap\Repositories\Repos;
 
 /**
  * Trait that add repository functionality to a model.
@@ -11,8 +12,10 @@ use Illuminate\Database\Eloquent\Model;
  */
 trait HasRepo {
     
-    var $repository;
-    
+    protected $repository;
+    protected $repoable;
+
+
     public function __get($key)
     {
         if ($key === 'repo')
@@ -23,12 +26,17 @@ trait HasRepo {
     
     protected function getRepository()
     {
-        $repository = $this->repository;
-        if($repository instanceof Repository) {
-            return $repository;
+        if($this->repository instanceof Repository) {
+            return $this->repository;
         }
 
-        return $repository = repo($this);
+        if($this->repoable) {
+            $repository = Repos::make($this->repoable);
+        } else {
+            $repository = Repos::make($this);
+        }
+        $this->setRepository($repository);
+        return $repository;
     }
     
     function getRelationKeyName($relationName) {
@@ -36,7 +44,7 @@ trait HasRepo {
     }
     
     function getRelationRepo($relationName) {
-        return repo($this->$relationName()->getRelated());
+        return Repos::make($this->$relationName()->getRelated());
     }
     
     public function makeScopeCacheKey($method, $parameters)
@@ -54,7 +62,7 @@ trait HasRepo {
         return $this->repo->useScopeCache($method, $parameters);
     }
     
-    function setRepository($repository)
+    function setRepository(Repository $repository)
     {
         $this->repository = $repository;
     }

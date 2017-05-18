@@ -65,7 +65,7 @@ class Factory implements Contracts\Factory {
     {
         $repositoryFullName = $this->getRepository($repoName);
         $model = $this->makeModel($repoName);
-        $repo = new $repositoryFullName($model);
+        $repo = new $repositoryFullName($model, $this);
         
         $decorated = $this->decorate($repo,$repoName);
         if(!$decorated) {

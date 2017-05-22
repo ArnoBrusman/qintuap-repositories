@@ -4,6 +4,7 @@ namespace Qintuap\Repositories\Contracts;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Model;
+//use Qintuap\Models\Model;
 
 /**
  * Description of Repository

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
 use Illuminate\Container\Container as App;
 use Illuminate\Database\Eloquent\Model;
+//use Qintuap\Models\Model;
 use Qintuap\Repositories\Exceptions\RepositoryException;
 use Qintuap\Scopes\Contracts\Scoped;
 use Qintuap\Scopes\Scope;
@@ -132,7 +133,7 @@ class EloquentRepository implements RepositoryContract, Scoped
         if(method_exists($model, $relationName)) {
             $relationQuery = $model->$relationName();
             if($callback) {
-                $relationQuery = $callback($relationQuery);
+                $relationQuery = $callback($relationQuery) ?: $relationQuery;
             }
             return $relationQuery->getResults();
         }

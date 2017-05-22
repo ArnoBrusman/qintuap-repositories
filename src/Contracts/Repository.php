@@ -1,10 +1,10 @@
 <?php
 
-namespace Advanza\Repositories\Contracts;
-use Advanza\Models\Contracts\Entity;
+namespace Qintuap\Repositories\Contracts;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Model;
+//use Qintuap\Models\Model;
 
 /**
  * Description of Repository
@@ -30,6 +30,7 @@ interface Repository {
     public function push(Model $model);
     /**
      * @param array $data
+     * @param array $push Push the created model to the database.
      * @return Model
      */
     public function create(array $data, $push = true);
@@ -38,20 +39,10 @@ interface Repository {
  
     public function delete($id);
     
-    public function exists($id);
+    public function exists();
  
-    /**
-     * @return Entity
-     */
     public function find($id, $columns = array('*'));
  
-    /**
-     * 
-     * @param string $field
-     * @param mixed $value
-     * @param array $columns
-     * @return Entity
-     */
     public function findBy($field, $value, $columns = array('*'));
     
     public function first($columns);

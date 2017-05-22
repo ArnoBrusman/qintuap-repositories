@@ -1,8 +1,8 @@
 <?php
 
-namespace Advanza\Repositories\Traits;
+namespace Qintuap\Repositories\Traits;
 
-use Advanza\Repos;
+use Qintuap\Repositories\Repos;
 
 /**
  * WARNING: sets the __get function. Currently doesn't preserve scope of lazy loaded properties.
@@ -18,9 +18,6 @@ trait LazyRepos {
 
     protected function initLazyRepos(array $lazyRepos, $namespace = null)
     {
-        if($namespace !== null) {
-            Repos::addNamespace($namespace.'\\Repositories');
-        }
         foreach ($lazyRepos as $lazyRepo) {
 
             $lazyProperty = lcfirst($lazyRepo) . $this->lazyPropertyAffix;

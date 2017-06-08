@@ -15,14 +15,14 @@ use Qintuap\Scopes\Contracts\Scoped;
 use Qintuap\Scopes\Scope;
 use Qintuap\Scopes\Traits\HasScopes;
 use Illuminate\Support\Collection;
-use Illuminate\Database\Eloquent\Builder;
+use Qintuap\Repositories\Query\Builder as Query;
+use Illuminate\Database\Eloquent\Builder as EloquentQuery;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Exception;
 
-class EloquentRepository implements RepositoryContract, Scoped
+class EloquentRepository implements RepositoryContract
 {
-    use \Qintuap\Scopes\Traits\HasScopes;
     
     /* @var $query Builder */
     /**
@@ -63,15 +63,8 @@ class EloquentRepository implements RepositoryContract, Scoped
      */
     public function newQuery()
     {
-        return $this->_prepQuery($this->model->newQuery());
-    }
-
-    /**
-     * returns a new query without scopes or criteria.
-     */
-    public function newQueryWithoutScopes()
-    {
-        return $this->model->newQuery();
+        $query = $this->model->newQuery();
+        return $this->_prepQuery($query);
     }
     
     public function newRepo()
@@ -106,11 +99,7 @@ class EloquentRepository implements RepositoryContract, Scoped
      */
     protected function _prepQuery($query)
     {
-        if(isset($this->limit_max)) {
-            $query->limit($this->limit_max);
-        }
-        return $this->applyOrder($query)
-                ->applyScopes($query) ?: $query;   
+        return $query;   
     }
     
     /* ----------------------------------------------------- *\
@@ -211,11 +200,6 @@ class EloquentRepository implements RepositoryContract, Scoped
         return $query->select($attribute)->distinct()->get()->pick($attribute);
     }
     
-    public function random()
-    {
-        return $this->newQuery()->orderByRaw('RAND()')->first();
-    }
-    
     public function count()
     {
         return $this->newQuery()->count();
@@ -290,89 +274,16 @@ class EloquentRepository implements RepositoryContract, Scoped
     }
     
     /* ----------------------------------------------------- *\
-     * Default Scopes
-     * ----------------------------------------------------- */
-    
-    public function scopeWhere($query,$attribute,$operator = null, $value = null)
-    {
-        return $query->where($attribute,$operator,$value);
-    }
-    
-    public function scopeWith($query,$relations) {
-        return $query->with($relations);
-    }
-    
-    public function queryScope($query,$method,$arguments) {
-        return call_user_func_array([$query,$method], $arguments);
-    }
-    
-    /* ----------------------------------------------------- *\
-     * Order method
-     * ----------------------------------------------------- */
-    
-    protected $orders = [];
-
-    public function orderBy($attr, $order = 'asc')
-    {
-        $this->orders[$attr] = $order;
-        return $this;
-    }
-    
-    public function getOrders()
-    {
-        return $this->orders;
-    }
-    
-    protected function applyOrder($query)
-    {
-        foreach ($this->orders as $attr => $order) {
-            $query->orderBy($attr, $order);
-        }
-        return $this;
-    }
-    
-    /* ----------------------------------------------------- *\
-     * Limit method
-     * ----------------------------------------------------- */
-
-    var $limit_max;
-    function limit($max)
-    {
-        $this->limit_max = $max;
-        return $this;
-    }
-
-    /* ----------------------------------------------------- *\
      * Overload Methods
      * ----------------------------------------------------- */
     public function __call($method, $parameters)
     {
-        // check if it's a scope
-        if ($this->methodScopeExists($method)) {
-            $scope = 'scope'.ucfirst($method);
-            return $this->pushCallableScope([$this, $scope], $parameters);
-        } 
-        // Might be too resource intensive to actually use. Cut this when the app starts acting weird.
-        elseif ($this->methodBuilderExists($method)) {
-            $builderParameters = [$method,$parameters];
-            return $this->pushCallableScope([$this, 'queryScope'], $builderParameters);
-        }
-        return call_user_func_array([$this->model, $method], $parameters);
+        return $this->newQuery()->$method(...$parameters);
     }
     
-    public function methodScopeExists($method) //doesn't start with 'scope' because that might actually be a scope
-    {
-        $scope = 'scope'.ucfirst($method);
-        return method_exists($this, $scope) || method_exists($this->model, $scope);
-    }
     public function methodBuilderExists($method)
     {
         return method_exists(Builder::class, $method) || method_exists(QueryBuilder::class, $method);
-    }
-    
-    static function __callStatic($name, $arguments)
-    {
-        return call_user_func_array([$this->model, $name], $arguments);
     }
     
     /* ----------------------------------------------------- *\

@@ -5,6 +5,8 @@ namespace Qintuap\Repositories\Traits;
 use Qintuap\Repositories\Contracts\Repository;
 use Illuminate\Database\Eloquent\Model;
 use Qintuap\Repositories\Repos;
+use Qintuap\Repositories\Query\Builder;
+use Qintuap\Repositories\Query\CacheBuilder;
 
 /**
  * Trait that add repository functionality to a model.

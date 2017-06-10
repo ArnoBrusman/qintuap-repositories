@@ -1,8 +1,0 @@
-{
-    "packages": {
-        "qintuap/repositories": {
-            "dev-master": { @composer.json },
-            "dev-dev": { @composer.json }
-        }
-    }
-}

@@ -3,22 +3,16 @@
 namespace Qintuap\Repositories;
 
 use Closure;
-use Qintuap\Repositories\Contracts\Repository as RepositoryContract;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
-use Illuminate\Container\Container as App;
+use Illuminate\Database\Eloquent\Relations\{BelongsToMany,BelongsTo,HasOneOrMany,Relation};
 use Illuminate\Database\Eloquent\Model;
-//use Qintuap\Models\Model;
-use Qintuap\Repositories\Exceptions\RepositoryException;
-use Qintuap\Scopes\Contracts\Scoped;
-use Qintuap\Scopes\Scope;
-use Qintuap\Scopes\Traits\HasScopes;
-use Illuminate\Support\Collection;
-use Qintuap\Repositories\Query\Builder as Query;
-use Illuminate\Database\Eloquent\Builder as EloquentQuery;
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Collection;
+//use Qintuap\Models\Model;
+use Qintuap\Repositories\{
+    Query\Builder as Query,
+    Contracts\Repository as RepositoryContract,
+    Exceptions\RepositoryException
+};
 use Exception;
 
 class EloquentRepository implements RepositoryContract
@@ -286,6 +280,21 @@ class EloquentRepository implements RepositoryContract
         return method_exists(Builder::class, $method) || method_exists(QueryBuilder::class, $method);
     }
     
+    /* ----------------------------------------------------- *\
+     * Utility methods
+     * ----------------------------------------------------- */
+    
+    function getFilePath($path = '', $public = false)
+    {
+        $public_path = $public ? 'public/' : '';
+        return storage_path('app/'.$public_path . strtolower($this->getModelName()).'_files/' .$path);
+    }
+
+    function getFileHref($path = '')
+    {
+        return '/storage/'.strtolower($this->getModelName()).'_files/'.$path;
+    }
+
     /* ----------------------------------------------------- *\
      * Internal methods
      * ----------------------------------------------------- */

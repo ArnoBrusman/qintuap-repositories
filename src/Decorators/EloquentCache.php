@@ -25,12 +25,8 @@ use Qintuap\CacheDecorators\Contracts\CacheableScopes;
  *
  * @author Premiums
  */
-class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContract, Scoped
+class EloquentCache implements CacheDecorator, RepositoryContract
 {
-//    use HasQueryState {
-//        HasQueryState::__call as protected queryCall;
-//    }
-    
     /**
      * @var EloquentRepository
      */
@@ -71,232 +67,32 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
     {
         if(!$this->cache) return false;
         
-        $cacheable = $this->scopesAreCacheable();
-        
-        return $cacheable;
+        return true;
     }
     
     /** generic methods **/
     
     protected function buildKey($method, $identifier = null)
     {
-        foreach ($this->repository->getScopes() as $Scope) {
-            if($Scope instanceof Scope && $Scope->useCache()) {
-                $identifier .= '.'.$Scope->getCacheKey();
-//            } elseif(is_array($Scope) && is_callable($Scope)) {
-                
-//            } elseif($Scope instanceof Closure) {
-//                \Debugbar::startMeasure('hash','Hashing scope');
-//                $identifier .= $this->hashClosure($Scope);
-//                \Debugbar::stopMeasure('hash');
-            } elseif(is_string($Scope)) {
-                $identifier .= '.'.$Scope;
-            }
-        }
-        $identifier .= 'order:';
-        foreach ($this->repository->getOrders() as $attr => $order) {
-            $identifier .= '.'.$attr . '-' . $order;
-        }
-        if(isset($this->repository->limit_max)) {
-            $identifier .= 'limit:'.$this->repository->limit_max;
-        }
-        
         return md5($method . $identifier);
     }
 
-    protected function getTags($withScopes = true)
+    protected function getTags()
     {
         $tags = $this->tags;
-        if($withScopes) {
-            foreach ($this->repository->getScopes() as $Scope) {
-                if($Scope instanceof Scope && $Scope->useCache()) {
-                    $tags = array_merge($tags, $Scope->getCacheTags());
-                }
-            }
-        }
         return $tags;
     }
     
-    /**
-     * @param array $columns
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public function all($columns = ['*'])
-    {
-        if ( ! $this->useCache()) {
-            return $this->repository->all($columns);
-        }
-
-        // __METHOD__ returns App\Repositories\Decorators\CacheGroupDecorator::all so not confused with other all() methods.
-        $key = $this->buildKey(__METHOD__, join('.', $columns));
-        $tags = $this->getTags();
-
-        return $this->cache->tags($tags)->rememberForever($key, function () use ($columns) {
-            return $this->repository->all($columns);
-        });
-    }
-
-    public function allWith($relations)
-    {
-        if(is_string($relations)) {
-            $relations = [$relations];
-        }
-        $tags = $this->getRelationTags($relations);
-        return $this->genericMethodCache(__FUNCTION__, func_get_args(), $tags);
-    }
-    
-    /**
-     * @param Model $model
-     * @return Model
-     */
-    public function push(Model $model)
-    {
-        $tags = $this->getTags(false);
-        
-        // also clear tags for any set relation
-        foreach ($model->getRelations() as $relation) {
-            if($relation instanceof Collection) $relation = $relation->first();
-            $tags = array_merge($tags,$this->makeClassTags($relation));
-        }
-        
-        $this->cache->tags($tags)->flush();
-        
-        
-        return $this->repository->push($model);
-    }
-    
-    /**
-     * @param int $id
-     * @param array $columns
-     * @return \Illuminate\Database\Eloquent
-     */
-    public function find($id, $columns = array('*'))
-    {
-        return $this->genericMethodCache(__FUNCTION__, func_get_args());
-    }
-    
-    public function findWith($id, $relations)
-    {
-        if(is_string($relations)) {
-            $relations = [$relations];
-        }
-        $tags = $this->getRelationTags($relations);
-        return $this->genericMethodCache(__FUNCTION__, func_get_args(), $tags);
-    }
-    
-    /**
-     * @param array $columns
-     * @return \Illuminate\Database\Eloquent
-     */
-    public function first($columns = array('*'))
-    {
-        if ( ! $this->useCache()) {
-            return $this->repository->first($columns);
-        }
-
-        $key = $this->buildKey(__METHOD__, implode('-', $columns));
-        $tags = $this->getTags();
-
-        return $this->cache->tags($tags)->rememberForever($key, function () use ($columns) {
-            return $this->repository->first($columns);
-        });
-    }
-    
-    public function create(array $data, $push = true)
-    {
-        if($push) {
-            $this->cache->tags($this->tags)->flush();
-        }
-        return $this->repository->create($data,$push);
-    }
-
     public function delete($id)
     {
         $this->cache->tags($this->tags)->flush();
         return $this->repository->delete($id);
     }
 
-    public function findBy($field, $value, $columns = ['*'])
-    {
-        if ( ! $this->useCache()) {
-            return $this->repository->findBy($field, $value, $columns);
-        }
-        $callback = function() use ($field, $value, $columns) {
-            return $this->repository->findBy($field, $value, $columns);
-        };
-        return $this->_cacheMethod(__FUNCTION__, implode('.', func_get_args()), $callback);
-    }
-
-    public function paginate($perPage = 15, $columns = [])
-    {
-        $callback = function() use ($perPage, $columns) {
-            return $this->repository->paginate($perPage, $columns);
-        };
-        
-        return $this->_cacheMethod(__METHOD__, implode('.', func_get_args()), $callback);
-    }
-
     public function update($id, array $data = [])
     {
         $this->cache->tags($this->tags)->flush();
         return $this->repository->update($id, $data);
-    }
-    
-    public function sync($id, $relation, $datas, $detaching = false)
-    {
-        $tags = $this->getRelationTags($relation);
-        
-        $this->cache->tags($tags)->flush();
-        return $this->repository->sync($id, $relation, $datas, $detaching);
-    }
-    
-    public function exists($id)
-    {
-        return $this->repository->exists($id);
-    }
-    
-    public function ofRelation($relationName,$relation) {
-        $tags = $this->getRelationTags($relationName);
-        $this->repository->pushCallableScope([$this->repository, 'scope' . ucfirst(__FUNCTION__)], [$relationName,$relation], $tags);
-        return $this;
-    }
-    
-    public function getRelation(Model $model,$relationName, \Closure $callback = null)
-    {
-        if(method_exists($model, $relationName)) {
-//            return $model->getRelationValue($relationName);
-            $relationQuery = $model->$relationName();
-            if($callback) {
-//                $snitch = new Snitch($relationQuery);
-                $relationQuery = $callback($relationQuery);
-//                if($snitch->isResultCacheable()) {
-//                    $tags = $snitch->getTags();
-//                    $key = $snitch->getKey();
-//                    $result = $this->cache->tags($tags)->rememberForever($key,function() {
-//                        return $relationQuery->getResults();
-//                    });
-//                } else {
-                    $result = $relationQuery->getResults();
-//                }
-                return $result;
-            }
-        }
-    }
-    
-    public function queryRelation(Model $model, $relationName, $callback) {
-        $tags = $this->getRelationTags($relationName);
-        $result = $this->genericMethodCache(__FUNCTION__, func_get_args(), $tags);
-        return $result;
-    }
-    
-    public function with($relations)
-    {
-        if(is_string($relations)) {
-            $relations = [$relations];
-        }
-        $tags = $this->getRelationTags($relations);
-        $this->repository->pushCallableScope([$this->repository, 'scope' . ucfirst(__FUNCTION__)], [$relations], $tags);
-        return $this;
     }
     
     /**
@@ -353,24 +149,7 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
         if($tags === null) {
             $tags = $this->getTags();
         }
-        if(is_callable([$this->repository, $method])) {
-            $key = $this->buildKey(get_class($this).'\\'.$method, json_encode($parameters));
-
-            if($this->cachetime === 0) {
-                return $this->cache->tags($tags)->rememberForever($key, function () use($method,$parameters) {
-                    $result = call_user_func_array([$this->repository, $method], $parameters);
-                    return $result;
-                });
-            } else {
-                return $this->cache->tags($tags)->remember($key, $this->cachetime, function () use($method,$parameters) {
-                    return call_user_func_array([$this->repository, $method], $parameters);
-                });
-            }
-        } else {
-            // it's probably still a non-cacheable repository method.
-            return call_user_func_array([$this->repository, $method], $parameters);
-//            throw new \Exception('method ' . $method . ' not found');
-        }
+        return call_user_func_array([$this->repository, $method], $parameters);
     }
 
     protected function delegate($method,$parameters)
@@ -379,7 +158,7 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
 //            $scope = 'scope'.ucfirst($method);
 //            $response = $this->repository->pushCallableScope([$this, $scope], $parameters);
 //        } else {
-            $response = call_user_func_array([$this->repository, $method], $parameters);
+        $response = call_user_func_array([$this->repository, $method], $parameters);
 //        }
         // is the repo trying to chain?
         if($response instanceof EloquentRepository) {
@@ -389,95 +168,6 @@ class EloquentCache implements CacheDecorator,CacheableScopes, RepositoryContrac
         }
     }
 
-
-    /* ----------------------------------------------------- *\
-     * Scope methods. 
-     * ----------------------------------------------------- */
-    
-    
-    protected function scopesAreCacheable()
-    {
-        if($this->repository->hasScope()) {
-            foreach ($this->repository->getScopes() as $Scope) {
-                if(!($Scope instanceof Scope && $Scope->useCache())
-//                        && !is_array(is_array($Scope) && is_callable($Scope))
-                        && !is_string($Scope)
-                        ) {
-                    if(config('app.env') !== 'production') {
-                        $scopeName = $Scope instanceof Scope ? $Scope->getName() : '';
-                        \Debugbar::addMessage('note: can\'t cache scope: ' .$scopeName , 'warning');
-                        \Debugbar::addMessage($Scope, 'warning');
-                    }
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-    
-    public function useScopeCache($method,$parameters)
-    {
-        return isset($this->scopes_cache) && (
-                $this->scopes_cache === true 
-                || $method === 'scopeOfRelation'
-                || in_array($method, $this->scopes_cache));
-    }
-
-    public function makeScopeCacheKey($method, $parameters)
-    {
-        foreach ($parameters as &$parameter) {
-            if($parameter instanceof Model) {
-                $parameter = $parameter->getKey();
-            }
-        }
-        $cache_key = md5(json_encode(array(
-                $method,
-                $parameters
-            )));
-        return $cache_key;
-    }
-    
-    public function makeScopeCacheTags($method, $parameters)
-    {
-        $tags = $this->tags;
-        foreach ($parameters as $parameter) {
-            if($parameter instanceof Model) {
-                $tags[] = DecoCache::makeModelTag($parameter);
-            }
-        }
-        if(isset($this->scope_tags) && key_exists($method, $this->scope_tags)) {
-            $scope_tags = is_array($this->scope_tags[$method]) 
-                    ? $this->scope_tags[$method]
-                    : [$this->scope_tags[$method]];
-            $tags = array_merge($tags, $scope_tags);
-        }
-        return $tags;
-    }
-
-    public function hasScope()
-    {
-        return $this->delegate(__FUNCTION__, func_get_args());
-    }
-
-    public function pushCallableScope($callable, array $parameters = [])
-    {
-        return $this->delegate(__FUNCTION__, func_get_args());
-    }
-
-    public function pushScope($scope, Closure $implementation = null)
-    {
-        return $this->delegate(__FUNCTION__, func_get_args());
-    }
-
-    public function pushScopes(array $scopes)
-    {
-        return $this->delegate(__FUNCTION__, func_get_args());
-    }
-
-    public function resetScope()
-    {
-        return $this->delegate(__FUNCTION__, func_get_args());
-    }
 
     /* ----------------------------------------------------- *\
      * Utility methods

@@ -51,10 +51,9 @@ class EloquentRepository implements RepositoryContract, Scoped
         return $collection;
     }
     
-    protected function make($with = [])
+    protected function make($attributes = [],$exists = false)
     {
-        $query = $this->model->with($with);
-        return $this->_prepQuery($query);
+        return $this->model->newInstance($attributes,$exists = false);
     }
 
     /**
@@ -179,6 +178,11 @@ class EloquentRepository implements RepositoryContract, Scoped
         return $this->newQuery()->find($id, $columns);
     }
     
+    public function findMany($ids, $columns = array('*'))
+    {
+        return $this->newQuery()->findMany($ids, $columns);
+    }
+    
     public function findBy($attribute, $value, $columns = array('*'))
     {
         return $this->findWhere($attribute, $value, $columns);
@@ -242,10 +246,8 @@ class EloquentRepository implements RepositoryContract, Scoped
 
     public function create(array $data, $push = true)
     {
-        $model = $this->model->newInstance();
-        foreach ($data as $key => $value) {
-            $model->$key = $value;
-        }
+        $model = $this->make($data);
+        
         if($push) {
             return $this->push($model);
         } else {

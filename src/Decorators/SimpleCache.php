@@ -5,7 +5,7 @@ namespace Advanza\Repositories\Decorators;
 /**
  * Description of SimpleCache
  *
- * @author Premiums
+ * @author Arno
  */
 class SimpleCache extends EloquentCache {
 

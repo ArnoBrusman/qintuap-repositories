@@ -6,7 +6,7 @@ use Qintuap\Repositories\Contracts\Repository;
 
 /**
  *
- * @author Premiums
+ * @author Arno
  */
 interface Factory {
 

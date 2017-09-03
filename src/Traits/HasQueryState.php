@@ -14,11 +14,9 @@ use Closure;
  * requests with the same scope & parameters.
  * Note: for now, scopes with closures as parameters aren't cached.
  *
- * @author Premiums
+ * @author Arno
  */
 trait HasQueryState {
-
-    
     
     /**
      * @var Builder

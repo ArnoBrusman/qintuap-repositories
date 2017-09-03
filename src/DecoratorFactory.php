@@ -5,7 +5,7 @@ namespace Qintuap\Repositories;
 use Qintuap\CacheDecorators\Factory as DecoFac;
 
 /**
- * @author Premiums
+ * @author Arno
  */
 class DecoratorFactory extends DecoFac {
     

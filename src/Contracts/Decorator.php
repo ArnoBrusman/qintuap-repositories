@@ -4,7 +4,7 @@ namespace Qintuap\Repositories\Contracts;
 
 /**
  *
- * @author Premiums
+ * @author Arno
  */
 interface Decorator {
 

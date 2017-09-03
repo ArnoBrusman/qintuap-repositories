@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * Description of Repository
  *
- * @author Premiums
+ * @author Arno
  */
 interface Repository {
 

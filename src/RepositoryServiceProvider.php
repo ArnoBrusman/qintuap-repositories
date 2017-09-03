@@ -5,7 +5,7 @@ namespace Qintuap\Repositories;
 use Illuminate\Support\ServiceProvider;
 
 /**
- * @author Premiums
+ * @author Arno
  */
 class RepositoryServiceProvider extends ServiceProvider {
     

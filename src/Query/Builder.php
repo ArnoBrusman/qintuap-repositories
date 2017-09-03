@@ -10,7 +10,7 @@ use Sofa\Eloquence\Builder as EloquenceBuilder;
 
 /**
  * Gotten from https://github.com/dwightwatson/rememberable/blob/master/src/Query/Builder.php
- * @author Premiums
+ * @author Arno
  */
 class Builder extends EloquenceBuilder {
     

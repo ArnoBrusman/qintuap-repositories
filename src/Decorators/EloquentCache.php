@@ -23,7 +23,7 @@ use Qintuap\CacheDecorators\Contracts\CacheableScopes;
 /**
  * Makes sure the majority of expensive queries that go through the repository are cached.
  *
- * @author Premiums
+ * @author Arno
  */
 class EloquentCache implements CacheDecorator, RepositoryContract
 {

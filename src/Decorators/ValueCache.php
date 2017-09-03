@@ -4,7 +4,7 @@ namespace Qintuap\Repositories\Decorators;
 
 
 /**
- * @author Premiums
+ * @author Arno
  */
 abstract class ValueCache extends EloquentCache {
     

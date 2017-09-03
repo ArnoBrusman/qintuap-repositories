@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Qintuap\Repositories\Contracts\Repository;
 
 /**
- * @author Premiums
+ * @author Arno
  */
 class Factory implements Contracts\Factory {
     
@@ -55,7 +55,6 @@ class Factory implements Contracts\Factory {
     function isRepoAble($repoAble)
     {
         $name = $this->makeRepoNameFromRepoable($repoAble);
-        
         $entityName = $this->getEntity($name);
 //        $repositoryFullName = $this->getRepository($repoName);
         

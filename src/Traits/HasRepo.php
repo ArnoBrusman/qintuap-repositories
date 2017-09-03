@@ -10,7 +10,7 @@ use Qintuap\Repositories\Query\CacheBuilder;
 
 /**
  * Trait that add repository functionality to a model.
- * @author Premiums
+ * @author Arno
  */
 trait HasRepo {
     

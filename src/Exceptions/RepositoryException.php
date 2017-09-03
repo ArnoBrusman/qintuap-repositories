@@ -7,7 +7,7 @@ use Exception;
 /**
  * Description of RepositoryException
  *
- * @author Premiums
+ * @author Arno
  */
 class RepositoryException extends Exception {
 

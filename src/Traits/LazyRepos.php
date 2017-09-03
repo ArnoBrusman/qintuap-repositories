@@ -5,10 +5,12 @@ namespace Qintuap\Repositories\Traits;
 use Qintuap\Repositories\Repos;
 
 /**
+ * Automagicaly create the modelRepo instance when called.
+ * 
  * WARNING: sets the __get function. Currently doesn't preserve scope of lazy loaded properties.
  * Only build the dependant repository when they are called.
  *
- * @author Premiums
+ * @author Arno
  */
 trait LazyRepos {
 
